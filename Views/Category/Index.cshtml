@@ -1,0 +1,55 @@
+@model IEnumerable<TriviaGame.App.Models.DTOs.Category.CategoryResponseDTO>
+
+@{
+    var jwtToken = ViewContext.HttpContext.Session.GetString("JWT");
+    var userId = ViewContext.HttpContext.Session.GetString("UserId");
+}
+
+<h2>Categorías</h2>
+<div id="categories">
+    @foreach(var cat in Model)
+    {
+        <button class="btn btn-primary category-btn" data-id="@cat.Id">@cat.Name</button>
+    }
+</div>
+
+@section Scripts {
+<script>
+    const token = '@jwtToken';
+    const userId = '@userId';
+    const URL = "https://localhost:7235/api/";
+
+    document.querySelectorAll(".category-btn").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            const categoryId = btn.dataset.id;
+
+            if (!token || !userId) {
+                alert("Inicia sesión primero");
+                return;
+            }
+
+            try {
+                const res = await fetch(`${URL}Game/start`, {
+                    method: "POST",
+                    headers: { 
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer " + token
+                    },
+                    body: JSON.stringify({ categoryId: parseInt(categoryId), userId: parseInt(userId) })
+                });
+
+                if (!res.ok) throw new Error("No se pudo iniciar el juego");
+
+                const data = await res.json();
+                const gameSessionId = data.gameSessionId;
+
+                // Redirigir a la vista del juego
+                window.location.href = `/Game/Index?gameSessionId=${gameSessionId}`;
+
+            } catch(err) {
+                alert(err.message);
+            }
+        });
+    });
+</script>
+}

@@ -1,0 +1,11 @@
+@model TriviaGame.App.Models.DTOs.User.RegisterUserRequestDto
+
+<form asp-action="Register" method="post">
+    <input asp-for="Gmail" placeholder="Correo" />
+    <span asp-validation-for="Gmail"></span>
+
+    <input asp-for="Password" placeholder="Contraseña" type="password" />
+    <span asp-validation-for="Password"></span>
+
+    <button type="submit">Registrar</button>
+</form>

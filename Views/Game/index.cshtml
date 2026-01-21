@@ -1,0 +1,143 @@
+@{
+    ViewData["Title"] = "Juego de Trivia";
+    var gameSessionId = Context.Request.Query["gameSessionId"].ToString();
+}
+
+<h2>Juego de Trivia</h2>
+
+<div id="game-container">
+    <div id="question-section">
+        <h4 id="question-text"></h4>
+        <ul id="answers-list" class="list-group"></ul>
+        <p id="timer">Tiempo restante: <span id="time-left">30</span> segundos</p>
+    </div>
+
+    <div id="game-message" style="display:none;"></div>
+    <button id="end-game-btn" style="display:none;">Finalizar Juego</button>
+</div>
+
+@section Scripts {
+<script>
+const gameSessionId = '@gameSessionId';
+const token = '@Context.Session.GetString("JWT")';
+
+let questions = [];
+let currentIndex = 0;
+let currentQuestion = null;
+let timer = null;
+let timeLeft = 30;
+
+const URL = "https://localhost:7235/api/";
+
+// Cargar preguntas
+async function loadQuestions() {
+    try {
+        const res = await fetch(`${URL}Game/${gameSessionId}/questions`, {
+            headers: { "Authorization": "Bearer " + token }
+        });
+
+        if (!res.ok) throw new Error("No se pudieron cargar las preguntas");
+
+        questions = await res.json();
+        loadQuestion();
+
+    } catch (err) {
+        alert(err.message);
+    }
+}
+
+// Mostrar pregunta actual
+async function loadQuestion() {
+    if (currentIndex >= questions.length) {
+        document.getElementById("question-section").style.display = "none";
+        const msg = document.getElementById("game-message");
+        msg.textContent = "¡Juego terminado!";
+        msg.style.display = "block";
+        document.getElementById("end-game-btn").style.display = "inline-block";
+        return;
+    }
+
+    currentQuestion = questions[currentIndex];
+    timeLeft = 30;
+
+    document.getElementById("question-text").textContent = currentQuestion.questionText;
+    const answersList = document.getElementById("answers-list");
+    answersList.innerHTML = "";
+
+    // Traer respuestas
+    try {
+        const res = await fetch(`${URL}Game/questions/${currentQuestion.questionId}/answers`, {
+            headers: { "Authorization": "Bearer " + token }
+        });
+
+        if (!res.ok) throw new Error("No se pudieron cargar las respuestas");
+        const answers = await res.json();
+
+        answers.forEach(a => {
+            const li = document.createElement("li");
+            li.textContent = a.answerText;
+            li.className = "list-group-item";
+            li.style.cursor = "pointer";
+            li.onclick = () => saveAnswer(a.answerId);
+            answersList.appendChild(li);
+        });
+
+    } catch (err) {
+        alert(err.message);
+    }
+
+    // Temporizador
+    if (timer) clearInterval(timer);
+    timer = setInterval(() => {
+        timeLeft--;
+        document.getElementById("time-left").textContent = timeLeft;
+
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            saveAnswer(null); // No respondió
+        }
+    }, 1000);
+}
+
+// Guardar respuesta
+async function saveAnswer(answerId) {
+    clearInterval(timer);
+
+    try {
+        await fetch(`${URL}Game/answer`, {
+            method: "POST",
+            headers: { 
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + token
+            },
+            body: JSON.stringify({
+                gameSessionId: parseInt(gameSessionId),
+                questionId: currentQuestion.questionId,
+                answerId: answerId,
+                timeSpentSeconds: 30 - timeLeft
+            })
+        });
+
+        currentIndex++;
+        loadQuestion();
+
+    } catch (err) {
+        alert("Error al guardar la respuesta: " + err.message);
+    }
+}
+
+document.addEventListener("DOMContentLoaded", loadQuestions);
+
+document.getElementById("end-game-btn").addEventListener("click", async () => {
+    try {
+        await fetch(`${URL}Game/${gameSessionId}/end`, {
+            method: "POST",
+            headers: { "Authorization": "Bearer " + token }
+        });
+        window.location.href = '/Category/Index';
+    } catch (err) {
+        alert(err.message);
+    }
+});
+</script>
+}
