@@ -1,114 +1,163 @@
 @{
     ViewData["Title"] = "Juego de Trivia";
-    var gameSessionId = Context.Request.Query["gameSessionId"].ToString();
 }
 
-<h2>Juego de Trivia</h2>
+<h2 class="text-center my-4">Juego de Trivia</h2>
 
-<div id="game-container">
-    <div id="question-section">
-        <h4 id="question-text"></h4>
+<div class="container">
+    <div id="game-container" class="card shadow p-4">
+        <!-- Pregunta -->
+        <div id="question-section" class="mb-3">
+            <h4 id="question-text" class="fw-bold"></h4>
 
-        <ul id="answers-list" class="list-group mb-3"></ul>
+            <ul id="answers-list" class="list-group mb-3"></ul>
 
-        <p id="timer">
-            Tiempo restante: <span id="time-left">0</span> segundos
-        </p>
+            <p id="timer" class="text-end">
+                ⏱ Tiempo restante: <span id="time-left">0</span> seg
+            </p>
+        </div>
+
+        <!-- Mensaje del juego -->
+        <div id="game-message" class="alert alert-info text-center" style="display:none;"></div>
     </div>
-
-    <div id="game-message" style="display:none;" class="alert alert-info"></div>
 </div>
 
 @section Scripts {
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
-
-    <script>
-        const gameSessionId = parseInt('@gameSessionId');
-        const token = '@Context.Session.GetString("JWT")';
-
-        let connection = null;
-        let currentQuestion = null;
-        let timer = null;
-        let timeLeft = 0;
-
-        document.addEventListener("DOMContentLoaded", startGame);
-
-        async function startGame() {
-            console.log("Iniciando juego. Session:", gameSessionId);
-
-            connection = new signalR.HubConnectionBuilder()
-                .withUrl("https://localhost:7235/gamehub", {
-                    accessTokenFactory: () => token
-                })
-                .withAutomaticReconnect()
-                .build();
-
-            connection.on("ReceiveQuestion", question => {
-                console.log("Pregunta recibida:", question);
-                renderQuestion(question);
-            });
-
-            connection.on("GameEnded", () => {
-                clearInterval(timer);
-                document.getElementById("question-section").style.display = "none";
-                document.getElementById("game-message").textContent = "Juego terminado";
-                document.getElementById("game-message").style.display = "block";
-            });
-
-            await connection.start();
-            await connection.invoke("StartGame", gameSessionId);
+<script>
+    // =========================
+    // 🔥 PREGUNTAS SIMULADAS
+    // =========================
+    const questions = [
+        {
+            QuestionId: 1,
+            QuestionText: "¿Qué animal puede cambiar el color de su piel?",
+            TimeLimitSeconds: 15,
+            Answers: [
+                { AnswerId: 1, AnswerText: "Camaleón" },
+                { AnswerId: 2, AnswerText: "Iguana" },
+                { AnswerId: 3, AnswerText: "Serpiente" }
+            ],
+            CorrectAnswerId: 1
+        },
+        {
+            QuestionId: 2,
+            QuestionText: "¿Cuál es el planeta más grande del sistema solar?",
+            TimeLimitSeconds: 15,
+            Answers: [
+                { AnswerId: 1, AnswerText: "Júpiter" },
+                { AnswerId: 2, AnswerText: "Saturno" },
+                { AnswerId: 3, AnswerText: "Marte" }
+            ],
+            CorrectAnswerId: 1
+        },
+        {
+            QuestionId: 3,
+            QuestionText: "¿Qué gas respiramos para vivir?",
+            TimeLimitSeconds: 10,
+            Answers: [
+                { AnswerId: 1, AnswerText: "Dióxido de carbono" },
+                { AnswerId: 2, AnswerText: "Oxígeno" },
+                { AnswerId: 3, AnswerText: "Nitrógeno" }
+            ],
+            CorrectAnswerId: 2
         }
+    ];
 
-       function renderQuestion(question) {
-    console.log("Renderizando:", question);
+    let currentQuestionIndex = 0;
+    let currentQuestion = null;
+    let timer = null;
+    let timeLeft = 0;
+    let answered = false;
+    let score = 0;
 
-    currentQuestion = question;
-    timeLeft = question.timeLimitSeconds || 30;
+    // =========================
+    // ▶️ INICIAR JUEGO
+    // =========================
+    function startGame() {
+        currentQuestionIndex = 0;
+        score = 0;
+        showQuestion(questions[currentQuestionIndex]);
+    }
 
-    document.getElementById("question-text").textContent =
-        question.questionText;
+    // =========================
+    // 🎯 MOSTRAR PREGUNTA
+    // =========================
+    function showQuestion(question) {
+        currentQuestion = question;
+        timeLeft = question.TimeLimitSeconds;
+        answered = false;
 
-    const list = document.getElementById("answers-list");
-    list.innerHTML = "";
+        document.getElementById("question-text").textContent = question.QuestionText;
+        const list = document.getElementById("answers-list");
+        list.innerHTML = "";
 
-    question.answers.forEach(a => {
-        const li = document.createElement("li");
-        li.textContent = a.text;
-        li.className = "list-group-item list-group-item-action";
-        li.style.cursor = "pointer";
-        li.onclick = () => submitAnswer(a.id);
-        list.appendChild(li);
-    });
+        question.Answers.forEach(a => {
+            const li = document.createElement("li");
+            li.textContent = a.AnswerText;
+            li.className = "list-group-item list-group-item-action mb-1";
+            li.style.cursor = "pointer";
+            li.onclick = () => selectAnswer(a.AnswerId);
+            list.appendChild(li);
+        });
 
-    startTimer();
-}
+        startTimer();
+    }
 
+    // =========================
+    // ⏱ TEMPORIZADOR
+    // =========================
+    function startTimer() {
+        clearInterval(timer);
+        document.getElementById("time-left").textContent = timeLeft;
 
-        function startTimer() {
-            clearInterval(timer);
+        timer = setInterval(() => {
+            timeLeft--;
             document.getElementById("time-left").textContent = timeLeft;
 
-            timer = setInterval(() => {
-                timeLeft--;
-                document.getElementById("time-left").textContent = timeLeft;
+            if (timeLeft <= 0) {
+                clearInterval(timer);
+                selectAnswer(null);
+            }
+        }, 1000);
+    }
 
-                if (timeLeft <= 0) {
-                    clearInterval(timer);
-                    submitAnswer(0);
-                }
-            }, 1000);
+    // =========================
+    // 📤 SELECCIONAR RESPUESTA
+    // =========================
+    function selectAnswer(answerId) {
+        if (answered) return;
+        answered = true;
+        clearInterval(timer);
+
+        if (answerId === currentQuestion.CorrectAnswerId) {
+            score += currentQuestion.Points || 10;
+            alert("✅ Correcto!");
+        } else {
+            alert("❌ Incorrecto!");
         }
 
-        async function submitAnswer(answerId) {
-    clearInterval(timer);
+        currentQuestionIndex++;
+        if (currentQuestionIndex < questions.length) {
+            showQuestion(questions[currentQuestionIndex]);
+        } else {
+            endGame();
+        }
+    }
 
-    await connection.invoke(
-        "SubmitAnswer",
-        gameSessionId,
-        currentQuestion.questionId,
-        answerId,
-        (currentQuestion.timeLimitSeconds || 30) - timeLeft
-    );
-}
-    </script>
+    // =========================
+    // 🏁 TERMINAR JUEGO
+    // =========================
+    function endGame() {
+        document.getElementById("question-section").style.display = "none";
+        const msg = document.getElementById("game-message");
+        msg.textContent = `🏆 Juego terminado! Tu puntuación: ${score}`;
+        msg.className = "alert alert-success text-center mt-3";
+        msg.style.display = "block";
+    }
+
+    // =========================
+    // 🔥 INICIO AUTOMÁTICO
+    // =========================
+    startGame();
+</script>
 }
