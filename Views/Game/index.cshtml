@@ -8,136 +8,107 @@
 <div id="game-container">
     <div id="question-section">
         <h4 id="question-text"></h4>
-        <ul id="answers-list" class="list-group"></ul>
-        <p id="timer">Tiempo restante: <span id="time-left">30</span> segundos</p>
+
+        <ul id="answers-list" class="list-group mb-3"></ul>
+
+        <p id="timer">
+            Tiempo restante: <span id="time-left">0</span> segundos
+        </p>
     </div>
 
-    <div id="game-message" style="display:none;"></div>
-    <button id="end-game-btn" style="display:none;">Finalizar Juego</button>
+    <div id="game-message" style="display:none;" class="alert alert-info"></div>
 </div>
 
 @section Scripts {
-<script>
-const gameSessionId = '@gameSessionId';
-const token = '@Context.Session.GetString("JWT")';
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
 
-let questions = [];
-let currentIndex = 0;
-let currentQuestion = null;
-let timer = null;
-let timeLeft = 30;
+    <script>
+        const gameSessionId = parseInt('@gameSessionId');
+        const token = '@Context.Session.GetString("JWT")';
 
-const URL = "https://localhost:7235/api/";
+        let connection = null;
+        let currentQuestion = null;
+        let timer = null;
+        let timeLeft = 0;
 
-// Cargar preguntas
-async function loadQuestions() {
-    try {
-        const res = await fetch(`${URL}Game/${gameSessionId}/questions`, {
-            headers: { "Authorization": "Bearer " + token }
-        });
+        document.addEventListener("DOMContentLoaded", startGame);
 
-        if (!res.ok) throw new Error("No se pudieron cargar las preguntas");
+        async function startGame() {
+            console.log("Iniciando juego. Session:", gameSessionId);
 
-        questions = await res.json();
-        loadQuestion();
+            connection = new signalR.HubConnectionBuilder()
+                .withUrl("https://localhost:7235/gamehub", {
+                    accessTokenFactory: () => token
+                })
+                .withAutomaticReconnect()
+                .build();
 
-    } catch (err) {
-        alert(err.message);
-    }
-}
+            connection.on("ReceiveQuestion", question => {
+                console.log("Pregunta recibida:", question);
+                renderQuestion(question);
+            });
 
-// Mostrar pregunta actual
-async function loadQuestion() {
-    if (currentIndex >= questions.length) {
-        document.getElementById("question-section").style.display = "none";
-        const msg = document.getElementById("game-message");
-        msg.textContent = "¡Juego terminado!";
-        msg.style.display = "block";
-        document.getElementById("end-game-btn").style.display = "inline-block";
-        return;
-    }
+            connection.on("GameEnded", () => {
+                clearInterval(timer);
+                document.getElementById("question-section").style.display = "none";
+                document.getElementById("game-message").textContent = "Juego terminado";
+                document.getElementById("game-message").style.display = "block";
+            });
 
-    currentQuestion = questions[currentIndex];
-    timeLeft = 30;
-
-    document.getElementById("question-text").textContent = currentQuestion.questionText;
-    const answersList = document.getElementById("answers-list");
-    answersList.innerHTML = "";
-
-    // Traer respuestas
-    try {
-        const res = await fetch(`${URL}Game/questions/${currentQuestion.questionId}/answers`, {
-            headers: { "Authorization": "Bearer " + token }
-        });
-
-        if (!res.ok) throw new Error("No se pudieron cargar las respuestas");
-        const answers = await res.json();
-
-        answers.forEach(a => {
-            const li = document.createElement("li");
-            li.textContent = a.answerText;
-            li.className = "list-group-item";
-            li.style.cursor = "pointer";
-            li.onclick = () => saveAnswer(a.answerId);
-            answersList.appendChild(li);
-        });
-
-    } catch (err) {
-        alert(err.message);
-    }
-
-    // Temporizador
-    if (timer) clearInterval(timer);
-    timer = setInterval(() => {
-        timeLeft--;
-        document.getElementById("time-left").textContent = timeLeft;
-
-        if (timeLeft <= 0) {
-            clearInterval(timer);
-            saveAnswer(null); // No respondió
+            await connection.start();
+            await connection.invoke("StartGame", gameSessionId);
         }
-    }, 1000);
+
+       function renderQuestion(question) {
+    console.log("Renderizando:", question);
+
+    currentQuestion = question;
+    timeLeft = question.timeLimitSeconds || 30;
+
+    document.getElementById("question-text").textContent =
+        question.questionText;
+
+    const list = document.getElementById("answers-list");
+    list.innerHTML = "";
+
+    question.answers.forEach(a => {
+        const li = document.createElement("li");
+        li.textContent = a.text;
+        li.className = "list-group-item list-group-item-action";
+        li.style.cursor = "pointer";
+        li.onclick = () => submitAnswer(a.id);
+        list.appendChild(li);
+    });
+
+    startTimer();
 }
 
-// Guardar respuesta
-async function saveAnswer(answerId) {
+
+        function startTimer() {
+            clearInterval(timer);
+            document.getElementById("time-left").textContent = timeLeft;
+
+            timer = setInterval(() => {
+                timeLeft--;
+                document.getElementById("time-left").textContent = timeLeft;
+
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    submitAnswer(0);
+                }
+            }, 1000);
+        }
+
+        async function submitAnswer(answerId) {
     clearInterval(timer);
 
-    try {
-        await fetch(`${URL}Game/answer`, {
-            method: "POST",
-            headers: { 
-                "Content-Type": "application/json",
-                "Authorization": "Bearer " + token
-            },
-            body: JSON.stringify({
-                gameSessionId: parseInt(gameSessionId),
-                questionId: currentQuestion.questionId,
-                answerId: answerId,
-                timeSpentSeconds: 30 - timeLeft
-            })
-        });
-
-        currentIndex++;
-        loadQuestion();
-
-    } catch (err) {
-        alert("Error al guardar la respuesta: " + err.message);
-    }
+    await connection.invoke(
+        "SubmitAnswer",
+        gameSessionId,
+        currentQuestion.questionId,
+        answerId,
+        (currentQuestion.timeLimitSeconds || 30) - timeLeft
+    );
 }
-
-document.addEventListener("DOMContentLoaded", loadQuestions);
-
-document.getElementById("end-game-btn").addEventListener("click", async () => {
-    try {
-        await fetch(`${URL}Game/${gameSessionId}/end`, {
-            method: "POST",
-            headers: { "Authorization": "Bearer " + token }
-        });
-        window.location.href = '/Category/Index';
-    } catch (err) {
-        alert(err.message);
-    }
-});
-</script>
+    </script>
 }
