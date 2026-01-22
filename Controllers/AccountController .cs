@@ -34,12 +34,14 @@ namespace TriviaGame.App.Controllers
                 return View(model);
             }
 
-            // Guardar en Session por compatibilidad
+            // Guardar en Session
             HttpContext.Session.SetString("JWT", user.Token);
             HttpContext.Session.SetString("UserId", user.Id.ToString());
             HttpContext.Session.SetString("UserEmail", user.Gmail);
 
-            // 🔹 Guardar en TempData para usarlo en JS y meter en localStorage
+            await HttpContext.Session.CommitAsync();
+
+            // TempData para JS
             TempData["JWT"] = user.Token;
             TempData["UserId"] = user.Id.ToString();
 
@@ -67,6 +69,11 @@ namespace TriviaGame.App.Controllers
                 return View(model);
             }
 
+            return RedirectToAction("Login");
+        }
+        public IActionResult Logout()
+        {
+            HttpContext.Session.Clear();
             return RedirectToAction("Login");
         }
     }

@@ -19,14 +19,15 @@ namespace TriviaGame.App.Controllers
         }
 
     [HttpGet]
-        public IActionResult Index(int gameSessionId)
-        {
-            if (gameSessionId <= 0)
-                return NotFound();
+       [HttpGet]
+public IActionResult Index(int gameSessionId)
+{
+    if (gameSessionId <= 0)
+        return NotFound();
 
-            ViewBag.GameSessionId = gameSessionId;
-            return View();
-        }
+    ViewBag.GameSessionId = gameSessionId;
+    return View();
+}
 
     }
 }

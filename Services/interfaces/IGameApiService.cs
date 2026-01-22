@@ -12,5 +12,6 @@ namespace TriviaGame.App.Services.interfaces
         Task<QuestionDto?> GetNextQuestionAsync(int gameSessionId);
         Task<AnswerResultDto?> SubmitAnswerAsync(SubmitAnswerDto dto);
         Task<GameOverDto?> EndGameAsync(int gameSessionId);
+        Task<List<CategoryRankingDto>> GetCategoryRankingAsync(int categoryId, int top = 10);
     }
 }

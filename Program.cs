@@ -1,38 +1,24 @@
+using TriviaGame.App.Middlewares;
 using TriviaGame.App.Services;
 using TriviaGame.App.Services.interfaces;
 using TriviaGame.App.Services.service;
-
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
-// Necesario si tus servicios usan HttpContext (para JWT o sesión)
 builder.Services.AddHttpContextAccessor();
 
+// Leer URL base desde appsettings.json
+var apiBaseUrl = builder.Configuration["ApiSettings:BaseUrl"] ?? "https://localhost:7235/";
 
-// HttpClient para CategoryApiService
-builder.Services.AddHttpClient<ICategoryApiService, CategoryApiService>(client =>
-{
-    client.BaseAddress = new Uri("https://localhost:7235/"); // tu backend
-});
-
-// HttpClient para UserApiService
-builder.Services.AddHttpClient<IUserApiService, UserApiService>(client =>
-{
-    client.BaseAddress = new Uri("https://localhost:7235/");
-});
-// httpclient para GameApiService
-builder.Services.AddHttpClient<IGameApiService, GameApiService>(client =>
-{
-    client.BaseAddress = new Uri("https://localhost:7235/");
-})
-.ConfigurePrimaryHttpMessageHandler(() =>
-{
-    // ⚠️ Solo para desarrollo: ignora errores de certificado
-    return new HttpClientHandler
+// HttpClients genéricos
+builder.Services.AddHttpClient<ICategoryApiService, CategoryApiService>(c => c.BaseAddress = new Uri(apiBaseUrl));
+builder.Services.AddHttpClient<IUserApiService, UserApiService>(c => c.BaseAddress = new Uri(apiBaseUrl));
+builder.Services.AddHttpClient<IGameApiService, GameApiService>(c => c.BaseAddress = new Uri(apiBaseUrl))
+    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
     {
         ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
-    };
-});
+    });
+
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
@@ -41,24 +27,24 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
-builder.Services.AddSession();
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
-app.UseSession();
-app.UseAuthentication();
-app.UseAuthorization();
+
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
 
+app.UseSession();
+app.UseMiddleware<SessionAuthMiddleware>(); // <- middleware revisa sesión
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",

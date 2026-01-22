@@ -60,6 +60,14 @@ namespace TriviaGame.App.Services.service
                 .GetFromJsonAsync<List<RankingDto>>("api/Game/ranking")
                 ?? new();
         }
-    
+        public async Task<List<CategoryRankingDto>> GetCategoryRankingAsync(int categoryId, int top = 10)
+        {
+            return await _httpClient
+                .GetFromJsonAsync<List<CategoryRankingDto>>(
+                    $"api/Game/ranking/category/{categoryId}?top={top}"
+                ) ?? new List<CategoryRankingDto>();
+
+
+        }
     }
 }
