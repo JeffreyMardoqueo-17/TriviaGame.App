@@ -1,163 +1,89 @@
 @{
     ViewData["Title"] = "Juego de Trivia";
+    var jwtToken = Context.Session.GetString("JWT");
+    var gameSessionId = (int)ViewBag.GameSessionId;
 }
 
 <h2 class="text-center my-4">Juego de Trivia</h2>
 
 <div class="container">
-    <div id="game-container" class="card shadow p-4">
-        <!-- Pregunta -->
-        <div id="question-section" class="mb-3">
-            <h4 id="question-text" class="fw-bold"></h4>
-
-            <ul id="answers-list" class="list-group mb-3"></ul>
-
-            <p id="timer" class="text-end">
-                ⏱ Tiempo restante: <span id="time-left">0</span> seg
-            </p>
-        </div>
-
-        <!-- Mensaje del juego -->
-        <div id="game-message" class="alert alert-info text-center" style="display:none;"></div>
+    <div class="card shadow p-4">
+        <h4 id="question-text"></h4>
+        <ul id="answers-list" class="list-group mb-3"></ul>
+        <p class="text-end">⏱ Tiempo: <span id="time">0</span>s</p>
+        <div id="result" class="alert alert-info d-none"></div>
     </div>
 </div>
 
 @section Scripts {
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+
 <script>
-    // =========================
-    // 🔥 PREGUNTAS SIMULADAS
-    // =========================
-    const questions = [
-        {
-            QuestionId: 1,
-            QuestionText: "¿Qué animal puede cambiar el color de su piel?",
-            TimeLimitSeconds: 15,
-            Answers: [
-                { AnswerId: 1, AnswerText: "Camaleón" },
-                { AnswerId: 2, AnswerText: "Iguana" },
-                { AnswerId: 3, AnswerText: "Serpiente" }
-            ],
-            CorrectAnswerId: 1
-        },
-        {
-            QuestionId: 2,
-            QuestionText: "¿Cuál es el planeta más grande del sistema solar?",
-            TimeLimitSeconds: 15,
-            Answers: [
-                { AnswerId: 1, AnswerText: "Júpiter" },
-                { AnswerId: 2, AnswerText: "Saturno" },
-                { AnswerId: 3, AnswerText: "Marte" }
-            ],
-            CorrectAnswerId: 1
-        },
-        {
-            QuestionId: 3,
-            QuestionText: "¿Qué gas respiramos para vivir?",
-            TimeLimitSeconds: 10,
-            Answers: [
-                { AnswerId: 1, AnswerText: "Dióxido de carbono" },
-                { AnswerId: 2, AnswerText: "Oxígeno" },
-                { AnswerId: 3, AnswerText: "Nitrógeno" }
-            ],
-            CorrectAnswerId: 2
-        }
-    ];
+    const token = '@jwtToken';
+    const gameSessionId = @gameSessionId;
 
-    let currentQuestionIndex = 0;
-    let currentQuestion = null;
-    let timer = null;
-    let timeLeft = 0;
-    let answered = false;
-    let score = 0;
+    let startTime = 0;
 
-    // =========================
-    // ▶️ INICIAR JUEGO
-    // =========================
-    function startGame() {
-        currentQuestionIndex = 0;
-        score = 0;
-        showQuestion(questions[currentQuestionIndex]);
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("https://localhost:7235/gamehub?access_token=" + token)
+        .withAutomaticReconnect()
+        .build();
+
+    async function start() {
+        await connection.start();
+        loadNextQuestion();
     }
 
-    // =========================
-    // 🎯 MOSTRAR PREGUNTA
-    // =========================
-    function showQuestion(question) {
-        currentQuestion = question;
-        timeLeft = question.TimeLimitSeconds;
-        answered = false;
+    async function loadNextQuestion() {
+        const question = await connection.invoke("GetNextQuestion", gameSessionId);
 
-        document.getElementById("question-text").textContent = question.QuestionText;
+        if (!question) {
+            endGame();
+            return;
+        }
+
+        startTime = Date.now();
+
+        document.getElementById("question-text").innerText = question.questionText;
         const list = document.getElementById("answers-list");
         list.innerHTML = "";
 
-        question.Answers.forEach(a => {
+        question.answers.forEach(a => {
             const li = document.createElement("li");
-            li.textContent = a.AnswerText;
-            li.className = "list-group-item list-group-item-action mb-1";
-            li.style.cursor = "pointer";
-            li.onclick = () => selectAnswer(a.AnswerId);
+            li.className = "list-group-item list-group-item-action";
+            li.innerText = a.answerText;
+            li.onclick = () => submitAnswer(question.questionId, a.answerId);
             list.appendChild(li);
         });
-
-        startTimer();
     }
 
-    // =========================
-    // ⏱ TEMPORIZADOR
-    // =========================
-    function startTimer() {
-        clearInterval(timer);
-        document.getElementById("time-left").textContent = timeLeft;
+    async function submitAnswer(questionId, answerId) {
+        const timeSpent = Math.floor((Date.now() - startTime) / 1000);
 
-        timer = setInterval(() => {
-            timeLeft--;
-            document.getElementById("time-left").textContent = timeLeft;
+        const result = await connection.invoke("SubmitAnswer", {
+            gameSessionId,
+            questionId,
+            answerId,
+            timeSpentSeconds: timeSpent
+        });
 
-            if (timeLeft <= 0) {
-                clearInterval(timer);
-                selectAnswer(null);
-            }
-        }, 1000);
+        const box = document.getElementById("result");
+        box.classList.remove("d-none");
+        box.innerText = result.isCorrect
+            ? `✔ Correcto (+${result.pointsEarned})`
+            : `✘ Incorrecto`;
+
+        setTimeout(() => {
+            box.classList.add("d-none");
+            loadNextQuestion();
+        }, 1200);
     }
 
-    // =========================
-    // 📤 SELECCIONAR RESPUESTA
-    // =========================
-    function selectAnswer(answerId) {
-        if (answered) return;
-        answered = true;
-        clearInterval(timer);
-
-        if (answerId === currentQuestion.CorrectAnswerId) {
-            score += currentQuestion.Points || 10;
-            alert("✅ Correcto!");
-        } else {
-            alert("❌ Incorrecto!");
-        }
-
-        currentQuestionIndex++;
-        if (currentQuestionIndex < questions.length) {
-            showQuestion(questions[currentQuestionIndex]);
-        } else {
-            endGame();
-        }
+    async function endGame() {
+        const gameOver = await connection.invoke("EndGame", gameSessionId);
+        alert(`Juego terminado. Puntaje: ${gameOver.totalPoints}`);
     }
 
-    // =========================
-    // 🏁 TERMINAR JUEGO
-    // =========================
-    function endGame() {
-        document.getElementById("question-section").style.display = "none";
-        const msg = document.getElementById("game-message");
-        msg.textContent = `🏆 Juego terminado! Tu puntuación: ${score}`;
-        msg.className = "alert alert-success text-center mt-3";
-        msg.style.display = "block";
-    }
-
-    // =========================
-    // 🔥 INICIO AUTOMÁTICO
-    // =========================
-    startGame();
+    start();
 </script>
 }

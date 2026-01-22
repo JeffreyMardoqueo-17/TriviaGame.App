@@ -5,9 +5,10 @@ using System.Threading.Tasks;
 
 namespace TriviaGame.App.Models.DTOs.Game
 {
-    public class StartGameRequestDTO
+     public class RankingDto
     {
         public int UserId { get; set; }
-        public int CategoryId { get; set; }
+        public string Gmail { get; set; } = string.Empty;
+        public int TotalPoints { get; set; }
     }
 }

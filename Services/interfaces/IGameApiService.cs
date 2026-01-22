@@ -6,9 +6,11 @@ using TriviaGame.App.Models.DTOs.Game;
 
 namespace TriviaGame.App.Services.interfaces
 {
-        public interface IGameApiService
+    public interface IGameApiService
     {
-        Task<StartGameResponseDTO> StartGameAsync(StartGameRequestDTO request);
+        Task<GameSessionDto?> StartGameAsync(int userId, int categoryId);
+        Task<QuestionDto?> GetNextQuestionAsync(int gameSessionId);
+        Task<AnswerResultDto?> SubmitAnswerAsync(SubmitAnswerDto dto);
+        Task<GameOverDto?> EndGameAsync(int gameSessionId);
     }
-
 }

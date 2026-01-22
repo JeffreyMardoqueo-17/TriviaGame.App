@@ -5,11 +5,10 @@ using System.Threading.Tasks;
 
 namespace TriviaGame.App.Models.DTOs.Game
 {
-    public class UserAnswerCreateDTO
+    public class AnswerResultDto
     {
-        public int GameSessionId { get; set; }
-        public int QuestionId { get; set; }
-        public int AnswerId { get; set; }
+        public bool IsCorrect { get; set; }
+        public int PointsEarned { get; set; }
         public int TimeSpentSeconds { get; set; }
     }
 }

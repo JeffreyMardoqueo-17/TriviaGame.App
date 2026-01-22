@@ -1,53 +1,67 @@
 @model IEnumerable<TriviaGame.App.Models.DTOs.Category.CategoryResponseDTO>
 
 @{
+    ViewData["Title"] = "Categorías";
     var jwtToken = ViewContext.HttpContext.Session.GetString("JWT");
-    var userId = ViewContext.HttpContext.Session.GetString("UserId");
+    var userIdStr = ViewContext.HttpContext.Session.GetString("UserId");
 }
 
 <h2>Categorías</h2>
+
 <div id="categories">
-    @foreach(var cat in Model)
+    @foreach (var cat in Model)
     {
-        <button class="btn btn-primary category-btn" data-id="@cat.Id">@cat.Name</button>
+        <button class="btn btn-primary category-btn"
+                data-id="@cat.Id">
+            @cat.Name
+        </button>
     }
 </div>
 
 @section Scripts {
 <script>
     const token = '@jwtToken';
-    const userId = '@userId';
-    const URL = "https://localhost:7235/api/";
+    const userId = parseInt('@userIdStr');
+    const API_URL = "https://localhost:7235/api/";
+
+    if (!token || isNaN(userId)) {
+        alert("Sesión inválida. Inicia sesión nuevamente.");
+    }
 
     document.querySelectorAll(".category-btn").forEach(btn => {
         btn.addEventListener("click", async () => {
-            const categoryId = btn.dataset.id;
 
-            if (!token || !userId) {
-                alert("Inicia sesión primero");
-                return;
-            }
+            const categoryId = parseInt(btn.dataset.id);
+            btn.disabled = true;
 
             try {
-                const res = await fetch(`${URL}Game/start`, {
-                    method: "POST",
-                    headers: { 
-                        "Content-Type": "application/json",
-                        "Authorization": "Bearer " + token
-                    },
-                    body: JSON.stringify({ categoryId: parseInt(categoryId), userId: parseInt(userId) })
-                });
+                const res = await fetch(
+                    `${API_URL}Game/start?userId=${userId}&categoryId=${categoryId}`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Authorization": "Bearer " + token
+                        }
+                    }
+                );
 
-                if (!res.ok) throw new Error("No se pudo iniciar el juego");
+                if (!res.ok) {
+                    const msg = await res.text();
+                    throw new Error(msg || "Error iniciando el juego");
+                }
 
                 const data = await res.json();
-                const gameSessionId = data.gameSessionId;
 
-                // Redirigir a la vista del juego
-                window.location.href = `/Game/Index?gameSessionId=${gameSessionId}`;
+                if (!data.gameSessionId) {
+                    throw new Error("Sesión inválida devuelta por el servidor");
+                }
 
-            } catch(err) {
+                window.location.href =
+                    `/Game/Index?gameSessionId=${data.gameSessionId}`;
+
+            } catch (err) {
                 alert(err.message);
+                btn.disabled = false;
             }
         });
     });

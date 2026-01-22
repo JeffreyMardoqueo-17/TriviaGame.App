@@ -1,7 +1,6 @@
 using TriviaGame.App.Services;
 using TriviaGame.App.Services.interfaces;
 using TriviaGame.App.Services.service;
-using TriviaGame.App.Services.Service;
 
 var builder = WebApplication.CreateBuilder(args);
 

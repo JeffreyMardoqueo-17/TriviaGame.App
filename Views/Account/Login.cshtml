@@ -9,3 +9,17 @@
 
     <button type="submit">Iniciar sesión</button>
 </form>
+
+@section Scripts {
+<script>
+    // 🔹 Si el servidor envía token en TempData (modifica controller para enviar)
+    const token = '@TempData["JWT"]';
+    const userId = '@TempData["UserId"]';
+
+    if (token && userId) {
+        localStorage.setItem("JWT", token);
+        localStorage.setItem("UserId", userId);
+        console.log("✅ Token guardado en localStorage");
+    }
+</script>
+}

@@ -5,9 +5,9 @@ using System.Threading.Tasks;
 
 namespace TriviaGame.App.Models.DTOs.Game
 {
-    public class AnswerDto
+    public class GameOverDto
     {
-        public int AnswerId { get; set; }
-        public string AnswerText { get; set; } = string.Empty;
+        public int TotalScore { get; set; }
+        public List<RankingDto> Ranking { get; set; } = new();
     }
 }

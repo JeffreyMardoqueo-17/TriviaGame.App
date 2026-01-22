@@ -34,10 +34,14 @@ namespace TriviaGame.App.Controllers
                 return View(model);
             }
 
-            // Guardar token y correo en session
+            // Guardar en Session por compatibilidad
             HttpContext.Session.SetString("JWT", user.Token);
-            HttpContext.Session.SetString("UserEmail", user.Gmail);
             HttpContext.Session.SetString("UserId", user.Id.ToString());
+            HttpContext.Session.SetString("UserEmail", user.Gmail);
+
+            // 🔹 Guardar en TempData para usarlo en JS y meter en localStorage
+            TempData["JWT"] = user.Token;
+            TempData["UserId"] = user.Id.ToString();
 
             return RedirectToAction("Index", "Category");
         }
