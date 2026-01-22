@@ -8,7 +8,11 @@ html {
   }
 }
 
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+.btn:focus,
+.btn:active:focus,
+.btn-link.nav-link:focus,
+.form-control:focus,
+.form-check-input:focus {
   box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
 }
 
@@ -23,62 +27,113 @@ body {
 
 /* ------------------------vista de categoria */
 .game-title {
-    text-align: center;
-    font-weight: 800;
-    margin-bottom: 50px;
-    letter-spacing: 1px;
+  text-align: center;
+  font-weight: 800;
+  margin-bottom: 50px;
+  letter-spacing: 1px;
 }
 
 .game-board {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 35px;
-    max-width: 900px;
-    margin: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 35px;
+  max-width: 900px;
+  margin: auto;
 }
 
 .game-card {
-    position: relative;
-    background: linear-gradient(145deg, #1e1e2f, #2b2b45);
-    border-radius: 20px;
-    padding: 40px 25px;
-    text-align: center;
-    color: #fff;
-    cursor: pointer;
-    overflow: hidden;
-    box-shadow: 0 15px 35px rgba(0,0,0,0.4);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  position: relative;
+  background: linear-gradient(145deg, #1e1e2f, #2b2b45);
+  border-radius: 20px;
+  padding: 40px 25px;
+  text-align: center;
+  color: #fff;
+  cursor: pointer;
+  overflow: hidden;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .game-card h3 {
-    font-size: 1.4rem;
-    font-weight: 700;
-    margin-bottom: 10px;
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 10px;
 }
 
 .game-card p {
-    font-size: 0.9rem;
-    opacity: 0.8;
+  font-size: 0.9rem;
+  opacity: 0.8;
 }
 
 .game-card:hover {
-    transform: translateY(-12px) scale(1.05);
-    box-shadow: 0 25px 45px rgba(0,0,0,0.6);
+  transform: translateY(-12px) scale(1.05);
+  box-shadow: 0 25px 45px rgba(0, 0, 0, 0.6);
 }
 
 .card-glow {
-    position: absolute;
-    inset: -50%;
-    background: radial-gradient(circle, rgba(0,255,255,0.25), transparent 60%);
-    opacity: 0;
-    transition: opacity 0.4s ease;
+  position: absolute;
+  inset: -50%;
+  background: radial-gradient(circle, rgba(0, 255, 255, 0.25), transparent 60%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
 }
 
 .game-card:hover .card-glow {
-    opacity: 1;
+  opacity: 1;
 }
 
 .game-card.loading {
-    pointer-events: none;
-    opacity: 0.6;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+
+/* -------------------------------------vista de gaeme  */
+
+.answer-correct {
+  background-color: #d4edda !important;
+  border-color: #28a745;
+  animation: pop 0.4s ease;
+}
+
+.answer-wrong {
+  background-color: #f8d7da !important;
+  border-color: #dc3545;
+  animation: shake 0.4s ease;
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.05);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes shake {
+  0% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-4px);
+  }
+
+  50% {
+    transform: translateX(4px);
+  }
+
+  75% {
+    transform: translateX(-4px);
+  }
+
+  100% {
+    transform: translateX(0);
+  }
 }
