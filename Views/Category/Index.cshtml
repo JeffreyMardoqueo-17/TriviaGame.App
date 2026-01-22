@@ -6,15 +6,16 @@
     var userIdStr = ViewContext.HttpContext.Session.GetString("UserId");
 }
 
-<h2>Categorías</h2>
+<h2 class="game-title">Elige tu desafío</h2>
 
-<div id="categories">
+<div class="game-board">
     @foreach (var cat in Model)
     {
-        <button class="btn btn-primary category-btn"
-                data-id="@cat.Id">
-            @cat.Name
-        </button>
+        <div class="game-card" data-id="@cat.Id">
+            <span class="card-glow"></span>
+            <h3>@cat.Name</h3>
+            <p>Comienza el reto</p>
+        </div>
     }
 </div>
 
@@ -28,11 +29,11 @@
         alert("Sesión inválida. Inicia sesión nuevamente.");
     }
 
-    document.querySelectorAll(".category-btn").forEach(btn => {
-        btn.addEventListener("click", async () => {
+    document.querySelectorAll(".game-card").forEach(card => {
+        card.addEventListener("click", async () => {
 
-            const categoryId = parseInt(btn.dataset.id);
-            btn.disabled = true;
+            const categoryId = parseInt(card.dataset.id);
+            card.classList.add("loading");
 
             try {
                 const res = await fetch(
@@ -45,23 +46,15 @@
                     }
                 );
 
-                if (!res.ok) {
-                    const msg = await res.text();
-                    throw new Error(msg || "Error iniciando el juego");
-                }
+                if (!res.ok) throw new Error("Error iniciando el juego");
 
                 const data = await res.json();
-
-                if (!data.gameSessionId) {
-                    throw new Error("Sesión inválida devuelta por el servidor");
-                }
-
                 window.location.href =
                     `/Game/Index?gameSessionId=${data.gameSessionId}`;
 
             } catch (err) {
                 alert(err.message);
-                btn.disabled = false;
+                card.classList.remove("loading");
             }
         });
     });
