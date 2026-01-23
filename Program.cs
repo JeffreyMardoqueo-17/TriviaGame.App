@@ -40,7 +40,7 @@ app.UseRouting();
 app.UseSession();
 
 // Luego el  middleware de autenticación
-// app.UseMiddleware<SessionAuthMiddleware>();
+app.UseMiddleware<SessionAuthMiddleware>();
 
 // Auth/Authorization 
 app.UseAuthentication();

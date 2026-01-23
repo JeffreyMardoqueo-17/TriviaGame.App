@@ -18,14 +18,13 @@ namespace TriviaGame.App.Middlewares
             var path = context.Request.Path.Value ?? "";
             Console.WriteLine($"[Middleware] Request Path: {path}");
 
-            // Rutas públicas que no requieren login
-            if (path.StartsWith("/account/login", StringComparison.OrdinalIgnoreCase) ||
-                path.StartsWith("/account/register", StringComparison.OrdinalIgnoreCase) ||
-                path.StartsWith("/css", StringComparison.OrdinalIgnoreCase) ||
-                path.StartsWith("/js", StringComparison.OrdinalIgnoreCase) ||
-                path.StartsWith("/lib", StringComparison.OrdinalIgnoreCase))
+            if (path == "/" ||
+     path.StartsWith("/account/login", StringComparison.OrdinalIgnoreCase) ||
+     path.StartsWith("/account/register", StringComparison.OrdinalIgnoreCase) ||
+     path.StartsWith("/css") ||
+     path.StartsWith("/js") ||
+     path.StartsWith("/lib"))
             {
-                Console.WriteLine("[Middleware] Ruta pública, no se requiere sesión.");
                 await _next(context);
                 return;
             }

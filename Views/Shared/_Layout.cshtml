@@ -7,9 +7,15 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - TriviaGame.App</title>
+    <title>@ViewData["Title"] - Trivia Beasts</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    
+    @* los css de login y registed *@
+    <link rel="stylesheet" href="~/css/Registred.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/Login.css" asp-append-version="true" />
+    <link rel="icon" type="image/x-icon" href="~/logo.ico" />
+    
 </head>
 
 <body>
@@ -19,7 +25,7 @@
     <header>
         <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container-fluid">
-                <a class="navbar-brand" asp-controller="Category" asp-action="Index">TriviaGame</a>
+                <a class="navbar-brand" asp-controller="Category" asp-action="Index">Trivia Beasts</a>
 
                 <div class="collapse navbar-collapse">
                     <ul class="navbar-nav flex-grow-1">
