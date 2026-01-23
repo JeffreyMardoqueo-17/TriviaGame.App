@@ -31,7 +31,7 @@
 │   ├─ IGameApiService.cs
 │   └─ GameApiService.cs    
 │
-├─ Helpers/               
+├─ Helpers/                
 │   └─ ApiClient.cs         
 │
 ├─ appsettings.json         
