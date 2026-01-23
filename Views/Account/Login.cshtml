@@ -1,0 +1,59 @@
+@model TriviaGame.App.Models.DTOs.User.LoginUserRequestDto
+
+@{
+    ViewData["Title"] = "Iniciar Sesión";
+}
+
+<div class="login-container">
+    <div class="login-card">
+        <h2>Iniciar Sesión</h2>
+
+        <form asp-action="Login" method="post">
+            <div class="form-group">
+                <label asp-for="Gmail">Correo electrónico</label>
+                <input asp-for="Gmail" class="form-control" placeholder="ejemplo@gmail.com" />
+                <span asp-validation-for="Gmail" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Password">Contraseña</label>
+                <div class="password-wrapper">
+                    <input asp-for="Password" id="passwordInput" class="form-control" type="password" placeholder="••••••••" />
+                    <span class="toggle-password" onclick="togglePassword()">Mostrar</span>
+                </div>
+                <span asp-validation-for="Password" class="text-danger"></span>
+            </div>
+
+            <button type="submit" class="btn-login">
+                Entrar
+            </button>
+            <span>¿No tienes una cuenta? <a href="/Account/Register">Regístrate</a></span>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function togglePassword() {
+        const input = document.getElementById("passwordInput");
+        const toggle = document.querySelector(".toggle-password");
+
+        if (input.type === "password") {
+            input.type = "text";
+            toggle.textContent = "Ocultar";
+        } else {
+            input.type = "password";
+            toggle.textContent = "Mostrar";
+        }
+    }
+
+    const token = '@TempData["JWT"]';
+    const userId = '@TempData["UserId"]';
+
+    if (token && userId) {
+        localStorage.setItem("JWT", token);
+        localStorage.setItem("UserId", userId);
+        console.log("✅ Token guardado en localStorage");
+    }
+</script>
+}

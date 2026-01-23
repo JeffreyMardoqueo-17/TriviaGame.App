@@ -1,0 +1,159 @@
+@{
+    ViewData["Title"] = "Juego de Trivia";
+    var jwtToken = Context.Session.GetString("JWT");
+    var gameSessionId = (int)ViewBag.GameSessionId;
+}
+
+<h2 class="text-center my-4">Juego de Trivia</h2>
+<div class="container my-4">
+    <div class="card shadow-lg p-4 border-0 game-card">
+        <h4 id="question-text" class="text-center fw-bold mb-4"></h4>
+        <ul id="answers-list" class="list-group list-group-flush mb-3"></ul>
+        <p class="text-end text-muted">⏱ Tiempo: <span id="time">30</span>s</p>
+        <div id="result" class="alert alert-info d-none"></div>
+    </div>
+</div>
+
+<!-------este modal saldra al finalzar el juego para qeu salga como salio con los puntajs -->
+<div class="modal fade" id="gameResultModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-purple text-white">
+                <h5 class="modal-title">🏆 Resultado de la partida</h5>
+            </div>
+
+            <div class="modal-body text-center">
+                <h3 id="finalScore" class="my-3"></h3>
+                <p id="finalStats" class="text-muted"></p>
+            </div>
+
+            <div class="modal-footer justify-content-center">
+                <button class="btn btn-purple btn-lg" onclick="goToCategories()">
+                    Regresar a categorías
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+
+<script>
+    const token = '@jwtToken';
+    const gameSessionId = @gameSessionId;
+
+    let timerInterval = null;
+    let remainingTime = 30;
+    let currentQuestionId = 0;
+    let questionAnswered = false;
+
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("https://localhost:7235/gamehub?access_token=" + token)
+        .withAutomaticReconnect()
+        .build();
+
+    async function start() {
+        await connection.start();
+        await loadNextQuestion();
+    }
+
+    async function loadNextQuestion() {
+        clearInterval(timerInterval);
+
+        const question = await connection.invoke("GetNextQuestion", gameSessionId);
+
+        if (!question) {
+            await endGame();
+            return;
+        }
+
+        currentQuestionId = question.questionId;
+        questionAnswered = false;
+
+        document.getElementById("question-text").innerText = question.questionText;
+
+        const list = document.getElementById("answers-list");
+        list.innerHTML = "";
+
+        question.answers.forEach(a => {
+            const li = document.createElement("li");
+            li.className = "list-group-item list-group-item-action";
+            li.innerText = a.answerText;
+            li.onclick = () => submitAnswer(question.questionId, a.answerId);
+            list.appendChild(li);
+        });
+
+        startTimer();
+    }
+
+    function startTimer() {
+        remainingTime = 30;
+        document.getElementById("time").innerText = remainingTime;
+
+        timerInterval = setInterval(() => {
+            remainingTime--;
+            document.getElementById("time").innerText = remainingTime;
+
+            if (remainingTime <= 0) {
+                clearInterval(timerInterval);
+                autoFailQuestion();
+            }
+        }, 1000);
+    }
+
+    async function submitAnswer(questionId, answerId) {
+        if (questionAnswered) return;
+        questionAnswered = true;
+        clearInterval(timerInterval);
+
+        await connection.invoke("SubmitAnswer", {
+            gameSessionId,
+            questionId,
+            answerId,
+            timeSpentSeconds: 30 - remainingTime
+        });
+
+        setTimeout(loadNextQuestion, 800);
+    }
+
+    async function autoFailQuestion() {
+        if (questionAnswered) return;
+        questionAnswered = true;
+
+        await connection.invoke("SubmitAnswer", {
+            gameSessionId,
+            questionId: currentQuestionId,
+            answerId: 0,
+            timeSpentSeconds: 30
+        });
+
+        setTimeout(loadNextQuestion, 800);
+    }
+
+    async function endGame() {
+        clearInterval(timerInterval);
+
+        const gameOver = await connection.invoke("EndGame", gameSessionId);
+
+        document.getElementById("finalScore").innerText =
+            `Puntaje total: ${gameOver.totalScore}`;
+
+        document.getElementById("finalStats").innerText =
+            `Jugador: ${gameOver.userName} | Posición: #${gameOver.position} ${gameOver.isTop3 ? '🏆 TOP 3' : ''}`;
+
+        const modal = new bootstrap.Modal(
+            document.getElementById('gameResultModal'),
+            { backdrop: 'static', keyboard: false }
+        );
+
+        modal.show();
+    }
+
+    function goToCategories() {
+        window.location.href = '/Category/Index';
+    }
+
+    start();
+</script>
+}
+ 

@@ -1,0 +1,61 @@
+@model IEnumerable<TriviaGame.App.Models.DTOs.Category.CategoryResponseDTO>
+
+@{
+    ViewData["Title"] = "Categorías";
+    var jwtToken = ViewContext.HttpContext.Session.GetString("JWT");
+    var userIdStr = ViewContext.HttpContext.Session.GetString("UserId");
+}
+
+<h2 class="game-title">Elige tu desafío</h2>
+
+<div class="game-board">
+    @foreach (var cat in Model)
+    {
+        <div class="game-card" data-id="@cat.Id">
+            <h3>@cat.Name</h3>
+            <p>Comienza el reto</p>
+        </div>
+    }
+</div>
+
+@section Scripts {
+<script>
+    const token = '@jwtToken';
+    const userId = parseInt('@userIdStr');
+    const API_URL = "https://localhost:7235/api/";
+
+    if (!token || isNaN(userId)) {
+        alert("Sesión inválida. Inicia sesión nuevamente.");
+    }
+
+    document.querySelectorAll(".game-card").forEach(card => {
+        card.addEventListener("click", async () => {
+
+            const categoryId = parseInt(card.dataset.id);
+            card.classList.add("loading");
+
+            try {
+                const res = await fetch(
+                    `${API_URL}Game/start?userId=${userId}&categoryId=${categoryId}`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Authorization": "Bearer " + token
+                        }
+                    }
+                );
+
+                if (!res.ok) throw new Error("Error iniciando el juego");
+
+                const data = await res.json();
+                window.location.href =
+                    `/Game/Index?gameSessionId=${data.gameSessionId}`;
+
+            } catch (err) {
+                alert(err.message);
+                card.classList.remove("loading");
+            }
+        });
+    });
+</script>
+}

@@ -1,0 +1,69 @@
+@model List<TriviaGame.App.Models.DTOs.Game.CategoryRankingDto>
+@using TriviaGame.App.Models.DTOs.Category
+
+@{
+    ViewData["Title"] = "Tabla de Posiciones";
+    var categoryId = ViewBag.CategoryId;
+    var top = ViewBag.Top;
+    var categories = ViewBag.Categories as IEnumerable<CategoryResponseDTO>;
+}
+
+<h2>Tabla de Posiciones</h2>
+
+<div class="mb-3">
+    <label for="categorySelect">Selecciona la categoría:</label>
+    <select id="categorySelect" class="form-select">
+        @foreach (var cat in categories)
+        {
+            <option value="@cat.Id" selected="@(cat.Id == categoryId)">@cat.Name</option>
+        }
+    </select>
+</div>
+
+<table class="table table-striped table-bordered">
+    <thead>
+        <tr>
+            <th>Posición</th>
+            <th>Usuario (Gmail)</th>
+            <th>Puntos</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model != null && Model.Count > 0)
+        {
+            int position = 1;
+            foreach (var item in Model)
+            {
+                <tr>
+                    <td>@position</td>
+                    <td>@item.Gmail</td>
+                    <td>@item.TotalPoints</td>
+                </tr>
+                position++;
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="3" class="text-center">No hay datos para mostrar</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@if (Model.Count >= top)
+{
+    <a href="@Url.Action("TablaPosiciones", "Ranking", new { categoryId = categoryId, top = 0 })" class="btn btn-primary">
+        Ver Todos
+    </a>
+}
+
+@section Scripts {
+<script>
+    // Al cambiar la categoría, recarga la página con el nuevo categoryId
+    document.getElementById("categorySelect").addEventListener("change", function () {
+        var selectedId = this.value;
+        window.location.href = '@Url.Action("TablaPosiciones", "Ranking")' + '?categoryId=' + selectedId;
+    });
+</script>
+}
