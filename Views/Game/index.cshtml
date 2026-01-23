@@ -4,20 +4,27 @@
     var gameSessionId = (int)ViewBag.GameSessionId;
 }
 
-<h2 class="text-center my-4">Juego de Trivia</h2>
+<h2 class="text-center my-4">🎮 Juego de Trivia</h2>
+
 <div class="container my-4">
     <div class="card shadow-lg p-4 border-0 game-card">
+
         <h4 id="question-text" class="text-center fw-bold mb-4"></h4>
+
         <ul id="answers-list" class="list-group list-group-flush mb-3"></ul>
-        <p class="text-end text-muted">⏱ Tiempo: <span id="time">30</span>s</p>
-        <div id="result" class="alert alert-info d-none"></div>
+
+        <div class="d-flex justify-content-between align-items-center">
+            <p class="text-muted mb-0">⏱ Tiempo: <span id="time">30</span>s</p>
+        </div>
+
+        <div id="result" class="alert d-none mt-3 text-center"></div>
     </div>
 </div>
 
-<!-------este modal saldra al finalzar el juego para qeu salga como salio con los puntajs -->
 <div class="modal fade" id="gameResultModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content shadow-lg border-0">
+
             <div class="modal-header bg-purple text-white">
                 <h5 class="modal-title">🏆 Resultado de la partida</h5>
             </div>
@@ -32,9 +39,11 @@
                     Regresar a categorías
                 </button>
             </div>
+
         </div>
     </div>
 </div>
+
 @section Scripts {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
 
@@ -60,6 +69,8 @@
     async function loadNextQuestion() {
         clearInterval(timerInterval);
 
+        document.getElementById("result").classList.add("d-none");
+
         const question = await connection.invoke("GetNextQuestion", gameSessionId);
 
         if (!question) {
@@ -79,7 +90,10 @@
             const li = document.createElement("li");
             li.className = "list-group-item list-group-item-action";
             li.innerText = a.answerText;
+            li.dataset.answerId = a.answerId;
+
             li.onclick = () => submitAnswer(question.questionId, a.answerId);
+
             list.appendChild(li);
         });
 
@@ -106,28 +120,60 @@
         questionAnswered = true;
         clearInterval(timerInterval);
 
-        await connection.invoke("SubmitAnswer", {
+        const result = await connection.invoke("SubmitAnswer", {
             gameSessionId,
             questionId,
             answerId,
             timeSpentSeconds: 30 - remainingTime
         });
 
-        setTimeout(loadNextQuestion, 800);
+        showAnswerFeedback(answerId, result);
+
+        setTimeout(loadNextQuestion, 1200);
     }
 
     async function autoFailQuestion() {
         if (questionAnswered) return;
         questionAnswered = true;
 
-        await connection.invoke("SubmitAnswer", {
+        const result = await connection.invoke("SubmitAnswer", {
             gameSessionId,
             questionId: currentQuestionId,
             answerId: 0,
             timeSpentSeconds: 30
         });
 
-        setTimeout(loadNextQuestion, 800);
+        showAnswerFeedback(null, result);
+
+        setTimeout(loadNextQuestion, 1200);
+    }
+
+    function showAnswerFeedback(selectedAnswerId, result) {
+        const items = document.querySelectorAll("#answers-list li");
+
+        items.forEach(li => {
+            li.style.pointerEvents = "none";
+            li.classList.add("disabled");
+
+            if (selectedAnswerId && li.dataset.answerId == selectedAnswerId) {
+                li.classList.add(
+                    result.isCorrect
+                        ? "list-group-item-success"
+                        : "list-group-item-danger"
+                );
+            }
+        });
+
+        const resultDiv = document.getElementById("result");
+        resultDiv.classList.remove("d-none");
+
+        if (result.isCorrect) {
+            resultDiv.className = "alert alert-success text-center mt-3";
+            resultDiv.innerText = `✅ Correcto! +${result.pointsEarned} puntos`;
+        } else {
+            resultDiv.className = "alert alert-danger text-center mt-3";
+            resultDiv.innerText = "❌ Incorrecto";
+        }
     }
 
     async function endGame() {
@@ -156,4 +202,3 @@
     start();
 </script>
 }
- 
