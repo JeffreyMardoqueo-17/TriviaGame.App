@@ -1,10 +1,10 @@
 /TriviaGame
 │
-├─ Controllers/             # Tus controladores MVC
+├─ Controllers/             
 │   ├─ HomeController.cs
-│   ├─ GameController.cs    # Controlador que consumirá la API de Trivia
+│   ├─ GameController.cs    
 │
-├─ Models/                  # Modelos para la vista y DTOs locales
+├─ Models/                
 │   ├─ GameSessionViewModel.cs
 │   ├─ QuestionViewModel.cs
 │   ├─ AnswerViewModel.cs
@@ -22,17 +22,17 @@
 │   │   ├─ Result.cshtml
 │   │   └─ History.cshtml
 │
-├─ wwwroot/                 # Archivos estáticos: CSS, JS, imágenes
+├─ wwwroot/                 
 │   ├─ css/
 │   ├─ js/
 │   └─ images/
 │
-├─ Services/                # Aquí defines servicios para consumir tu API
+├─ Services/               
 │   ├─ IGameApiService.cs
-│   └─ GameApiService.cs    # Implementa llamadas HTTP al backend
+│   └─ GameApiService.cs    
 │
-├─ Helpers/                 # Clases auxiliares
-│   └─ ApiClient.cs         # Wrapper para HttpClient
+├─ Helpers/               
+│   └─ ApiClient.cs         
 │
-├─ appsettings.json         # Configuración, por ejemplo URL del backend
-├─ Program.cs / Startup.cs  # Configuración de DI, middlewares, etc.
+├─ appsettings.json         
+├─ Program.cs / Startup.cs 
