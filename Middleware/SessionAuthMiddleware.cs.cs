@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using System.Threading.Tasks;
+using System;
 
 namespace TriviaGame.App.Middlewares
 {
@@ -14,31 +15,33 @@ namespace TriviaGame.App.Middlewares
 
         public async Task InvokeAsync(HttpContext context)
         {
-            var path = context.Request.Path.Value?.ToLower() ?? "";
+            var path = context.Request.Path.Value ?? "";
+            Console.WriteLine($"[Middleware] Request Path: {path}");
 
             // Rutas públicas que no requieren login
-            if (path.StartsWith("/account/login") ||
-                path.StartsWith("/account/register") ||
-                path.StartsWith("/css") ||
-                path.StartsWith("/js") ||
-                path.StartsWith("/lib"))
+            if (path.StartsWith("/account/login", StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith("/account/register", StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith("/css", StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith("/js", StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith("/lib", StringComparison.OrdinalIgnoreCase))
             {
+                Console.WriteLine("[Middleware] Ruta pública, no se requiere sesión.");
                 await _next(context);
                 return;
             }
 
-            //------ Cargar sesiinn (obligatorio)
-            await context.Session.LoadAsync();
-
+            // Revisar JWT en Session
             var jwt = context.Session.GetString("JWT");
+            Console.WriteLine($"[Middleware] JWT en Session: {(jwt ?? "null")}");
 
             if (string.IsNullOrEmpty(jwt))
             {
-                //------ Redirige al login si no hay JWT
+                Console.WriteLine("[Middleware] No hay sesión, redirigiendo al login...");
                 context.Response.Redirect("/Account/Login");
                 return;
             }
 
+            Console.WriteLine("[Middleware] Sesión encontrada, continuando al siguiente middleware/controller...");
             await _next(context);
         }
     }

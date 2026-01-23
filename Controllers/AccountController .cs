@@ -34,20 +34,17 @@ namespace TriviaGame.App.Controllers
                 return View(model);
             }
 
-            // Guardar en Session
+            //aqui se guarda la sesion 
             HttpContext.Session.SetString("JWT", user.Token);
             HttpContext.Session.SetString("UserId", user.Id.ToString());
             HttpContext.Session.SetString("UserEmail", user.Gmail);
 
-            await HttpContext.Session.CommitAsync();
-
-            // TempData para JS
-            TempData["JWT"] = user.Token;
-            TempData["UserId"] = user.Id.ToString();
+            // DEBUG REAL
+            Console.WriteLine("[LOGIN OK] JWT EN SESSION:");
+            Console.WriteLine(HttpContext.Session.GetString("JWT"));
 
             return RedirectToAction("Index", "Category");
         }
-
 
         // Mostrar formulario de registro
         [HttpGet]
@@ -83,5 +80,6 @@ namespace TriviaGame.App.Controllers
             HttpContext.Session.Clear();
             return RedirectToAction("Login");
         }
+
     }
 }
