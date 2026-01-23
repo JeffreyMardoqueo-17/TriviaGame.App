@@ -28,14 +28,24 @@ namespace TriviaGame.App.Services
             return await response.Content.ReadFromJsonAsync<UserResponseDto>();
         }
 
-        // Registro de usuario
         public async Task<UserResponseDto?> RegisterAsync(RegisterUserRequestDto registerDto)
         {
             var response = await _httpClient.PostAsJsonAsync("api/User/register", registerDto);
-            if (!response.IsSuccessStatusCode)
-                return null;
 
-            return await response.Content.ReadFromJsonAsync<UserResponseDto>();
+            try
+            {
+                var userResponse = await response.Content.ReadFromJsonAsync<UserResponseDto>();
+                return userResponse;
+            }
+            catch
+            {
+                // Retorna un objeto con mensaje genérico si falla
+                return new UserResponseDto
+                {
+                    Success = false,
+                    Message = "Error al registrar usuario"
+                };
+            }
         }
     }
 }

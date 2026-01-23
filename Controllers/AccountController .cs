@@ -53,22 +53,29 @@ namespace TriviaGame.App.Controllers
         [HttpGet]
         public IActionResult Register() => View();
 
-        // Procesar registro
         [HttpPost]
-        [ValidateAntiForgeryToken] //proetccioin contra ataques CSRF
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(RegisterUserRequestDto model)
         {
             if (!ModelState.IsValid)
                 return View(model);
 
-            var user = await _userApiService.RegisterAsync(model);
+            var response = await _userApiService.RegisterAsync(model);
 
-            if (user == null || !user.Success)
+            if (response == null)
             {
-                ModelState.AddModelError("", user?.Message ?? "Error al registrar");
+                ModelState.AddModelError("", "Error al registrar el usuario");
                 return View(model);
             }
 
+            // Si el usuario ya existe
+            if (!response.Success || !string.IsNullOrEmpty(response.Message))
+            {
+                ModelState.AddModelError("", response.Message ?? "Error al registrar el usuario");
+                return View(model);
+            }
+
+            // Registro exitoso
             return RedirectToAction("Login");
         }
         public IActionResult Logout()

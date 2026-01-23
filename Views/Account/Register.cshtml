@@ -23,7 +23,7 @@
         max-width: 450px;
         padding: 40px;
         border-radius: 16px;
-        box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
         animation: fadeIn 0.6s ease-in-out;
     }
 
@@ -55,7 +55,7 @@
     .form-control:focus {
         outline: none;
         border-color: #6a11cb;
-        box-shadow: 0 0 0 2px rgba(106,17,203,0.2);
+        box-shadow: 0 0 0 2px rgba(106, 17, 203, 0.2);
     }
 
     .password-wrapper {
@@ -107,7 +107,6 @@
     .text-danger {
         font-size: 13px;
     }
-
 </style>
 
 <div class="register-container">
@@ -115,6 +114,8 @@
         <h2>Crear cuenta</h2>
 
         <form asp-action="Register" method="post" onsubmit="return validateForm()">
+
+            <div asp-validation-summary="All" class="text-danger mb-2"></div>
 
             <div class="form-group">
                 <label asp-for="Gmail">Correo electrónico</label>
@@ -128,6 +129,7 @@
                     <input asp-for="Password" id="password" type="password" class="form-control" />
                     <span class="toggle-password" onclick="togglePassword('password')">Mostrar</span>
                 </div>
+
 
                 <div class="password-rules">
                     <div id="rule-length" class="rule-invalid">• Mínimo 6 caracteres</div>
@@ -156,45 +158,45 @@
 </div>
 
 @section Scripts {
-<script>
-    const passwordInput = document.getElementById("password");
-    const confirmInput = document.getElementById("confirmPassword");
-    const btnRegister = document.getElementById("btnRegister");
+    <script>
+        const passwordInput = document.getElementById("password");
+        const confirmInput = document.getElementById("confirmPassword");
+        const btnRegister = document.getElementById("btnRegister");
 
-    passwordInput.addEventListener("input", validatePassword);
-    confirmInput.addEventListener("input", validatePassword);
+        passwordInput.addEventListener("input", validatePassword);
+        confirmInput.addEventListener("input", validatePassword);
 
-    function togglePassword(id) {
-        const input = document.getElementById(id);
-        input.type = input.type === "password" ? "text" : "password";
-    }
+        function togglePassword(id) {
+            const input = document.getElementById(id);
+            input.type = input.type === "password" ? "text" : "password";
+        }
 
-    function validatePassword() {
-        const password = passwordInput.value;
-        const confirm = confirmInput.value;
+        function validatePassword() {
+            const password = passwordInput.value;
+            const confirm = confirmInput.value;
 
-        const hasLength = password.length >= 6;
-        const hasUpper = /[A-Z]/.test(password);
-        const hasSpecial = /[!@@#$%^&*(),.?":{}|<>]/.test(password);
-        const match = password === confirm && confirm !== "";
+            const hasLength = password.length >= 6;
+            const hasUpper = /[A-Z]/.test(password);
+            const hasSpecial = /[!@@#$%^&*(),.?":{}|<>]/.test(password);
+            const match = password === confirm && confirm !== "";
 
-        setRule("rule-length", hasLength);
-        setRule("rule-uppercase", hasUpper);
-        setRule("rule-special", hasSpecial);
+            setRule("rule-length", hasLength);
+            setRule("rule-uppercase", hasUpper);
+            setRule("rule-special", hasSpecial);
 
-        document.getElementById("matchError").textContent =
-            confirm && !match ? "Las contraseñas no coinciden" : "";
+            document.getElementById("matchError").textContent =
+                confirm && !match ? "Las contraseñas no coinciden" : "";
 
-        btnRegister.disabled = !(hasLength && hasUpper && hasSpecial && match);
-    }
+            btnRegister.disabled = !(hasLength && hasUpper && hasSpecial && match);
+        }
 
-    function setRule(id, valid) {
-        const el = document.getElementById(id);
-        el.className = valid ? "rule-valid" : "rule-invalid";
-    }
+        function setRule(id, valid) {
+            const el = document.getElementById(id);
+            el.className = valid ? "rule-valid" : "rule-invalid";
+        }
 
-    function validateForm() {
-        return !btnRegister.disabled;
-    }
-</script>
+        function validateForm() {
+            return !btnRegister.disabled;
+        }
+    </script>
 }
